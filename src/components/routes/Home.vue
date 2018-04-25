@@ -5,7 +5,7 @@
       <p class="lead">Donate to charity honor of reddit comments and posts.</p>
     </div>
 
-    <div class="card">
+    <div class="card mb-4">
       <div class="card-header">
         Start a Drive
       </div>
@@ -15,6 +15,7 @@
         </div>
         <b-form @submit="submit($event)">
           <b-form-group>
+            <label class="form-label">Reddit Post or Comment</label>
             <b-form-input
               type="text"
               v-model="form.redditPostUrl"
@@ -28,6 +29,20 @@
             <b-button variant="primary" type="submit">Submit</b-button>
           </b-form-group>
         </b-form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Recent Donations</div>
+      <div class="card-body">
+        <div v-if="recentDonations.loading">
+          Loading...
+        </div>
+        <div v-else>
+          <div v-for="(donation, index) in recentDonations.results">
+            {{donation.donor}} donated {{donation.amount}} cents
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -49,6 +64,11 @@ export default {
       errors: [],
       form: {
         redditPostUrl: ''
+      },
+      recentDonations: {
+        loading: true,
+        results: [],
+        err: false
       }
     }
   },
@@ -64,6 +84,9 @@ export default {
     }
   },
   methods: {
+    fetchData () {
+      this.recentDonations.loading = false
+    },
     submit: function (e) {
       e.preventDefault()
       if (!this.form.redditPostUrl) {
@@ -75,10 +98,19 @@ export default {
           return
         }
 
-        console.log('go to ' + result.id)
-        router.push({name: 'drive', params: {id: result.id}})
+        if (result.status == 'duplicate') {
+          alert('Drive already created for that post, redirecting...')
+        }
+        else {
+          alert('Created a drive')
+        }
+
+        router.push({name: 'drive', params: {id: result.drive.id}})
       })
     }
+  },
+  created () {
+    this.fetchData()
   }
 }
 </script>
