@@ -14,35 +14,32 @@
           <div v-for="(err, index) in errors" v-bind:key="index">{{err}}</div>
         </div>
         <b-form @submit="submit($event)">
-          <b-form-group>
-            <label class="form-label">Reddit Post or Comment</label>
-            <b-form-input
-              type="text"
-              v-model="form.redditPostUrl"
-              @input="$v.form.redditPostUrl.$touch()"
-              :state="$v.form.redditPostUrl.$dirty ? !$v.form.redditPostUrl.$invalid : null"
-              placeholder="https://">
-            </b-form-input>
-            <b-form-invalid-feedback>URL is required</b-form-invalid-feedback>
-          </b-form-group>
-          <b-form-group>
-            <b-button variant="primary" type="submit">Submit</b-button>
-          </b-form-group>
+          <fieldset :disabled="submitting">
+            <b-form-group>
+              <label class="form-label">Reddit Post or Comment</label>
+              <b-form-input
+                type="text"
+                v-model="form.redditPostUrl"
+                @input="$v.form.redditPostUrl.$touch()"
+                :state="$v.form.redditPostUrl.$dirty ? !$v.form.redditPostUrl.$invalid : null"
+                placeholder="https://">
+              </b-form-input>
+              <b-form-invalid-feedback>URL is required</b-form-invalid-feedback>
+            </b-form-group>
+            <b-form-group>
+              <b-button variant="primary" type="submit"><span v-if="submitting">Working...</span><span v-else>Submit</span></b-button>
+            </b-form-group>
+          </fieldset>
         </b-form>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">Recent Donations</div>
-      <div class="card-body">
-        <div v-if="recentDonations.loading">
-          Loading...
-        </div>
-        <div v-else>
-          <div v-for="(donation, index) in recentDonations.results">
-            {{donation.donor}} donated {{donation.amount}} cents
-          </div>
-        </div>
+    <div class="row">
+      <div class="col-md-6">
+        <ListCard v-bind:data="recentDonations" item-component="DonationItem" title="Recent Donations" empty-message="No donations"></ListCard>
+      </div>
+      <div class="col-md-6">
+        <ListCard v-bind:data="recentDrives" item-component="DriveItem" title="Recent Drives" empty-message="No drives"></ListCard>
       </div>
     </div>
   </div>
@@ -53,6 +50,7 @@ import { validationMixin } from 'vuelidate'
 import { required, url } from 'vuelidate/lib/validators'
 import api from '@/lib/api'
 import router from '@/router'
+import ListCard from '@/components/ListCard'
 
 export default {
   name: 'Index',
@@ -65,9 +63,15 @@ export default {
       form: {
         redditPostUrl: ''
       },
+      submitting: false,
       recentDonations: {
         loading: true,
-        results: [],
+        result: [],
+        err: false
+      },
+      recentDrives: {
+        loading: true,
+        result: [],
         err: false
       }
     }
@@ -83,16 +87,31 @@ export default {
       }
     }
   },
+  components: {
+    ListCard
+  },
   methods: {
     fetchData () {
-      this.recentDonations.loading = false
+      this.recentDonations.loading = true
+      api.fetchLatestDonations((err, result) => {
+        this.recentDonations.loading = false
+        this.recentDonations.err = err
+        this.recentDonations.result = result
+      })
+      api.fetchLatestDrives((err, result) => {
+        this.recentDrives.loading = false
+        this.recentDrives.err = err
+        this.recentDrives.result = result
+      })
     },
     submit: function (e) {
       e.preventDefault()
       if (!this.form.redditPostUrl) {
         return
       }
+      this.submitting = true
       api.createDrive(this.form, (err, result) => {
+        this.submitting = false
         if (err) {
           this.errors = [err.toString()]
           return

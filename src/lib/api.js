@@ -7,28 +7,32 @@ function request (method, url) {
 }
 
 function handler (done) {
-  console.log('make handler')
   return (err, result) => {
+    let json
+
     if (err) {
-      console.log('err')
-      done(err)
+      try {
+        json = JSON.parse(result.text)
+      } catch (ex) {
+        done(new Error('Error from server. Could not parse error JSON'))
+        return
+      }
+
+      done(json)
       return
     }
-    let json
     try {
       json = JSON.parse(result.text)
     } catch (ex) {
       done(new Error('Error parsing JSON'))
       return
     }
-    console.log('json', json)
     done(null, json)
   }
 }
 
 function createDrive (vueObj, done) {
   const data = { ...vueObj }
-  console.log('data', data)
   request('post', 'drives')
     .send(data)
     .end(handler(done))
@@ -38,7 +42,16 @@ function fetchDrive (id, done) {
   request('get', 'drives/' + id).end(handler(done))
 }
 
+function fetchLatestDonations (done) {
+  request('get', 'donations/latest').end(handler(done))
+}
+function fetchLatestDrives (done) {
+  request('get', 'drives/latest').end(handler(done))
+}
+
 export default {
   createDrive,
-  fetchDrive
+  fetchDrive,
+  fetchLatestDonations,
+  fetchLatestDrives
 }
