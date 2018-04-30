@@ -7566,11 +7566,13 @@
             var t;
             return t = 1 <= arguments.length ? p.call(arguments, 0) : [], i.on.apply(i, t), r.on.apply(r, t), !0
         }, u = function(t, e, n) {
+            console.log('u');
             return t.addEventListener ? t.addEventListener(e, n, !1) : t.attachEvent ? t.attachEvent("on" + e, n) : t["on" + e] = n
         }, s = function(t) {
-            console.log('sssssssssssss');
+            console.log('c.readyState', c.readyState);
             return "complete" === c.readyState ? t() : a(t)
         }, o = !1, f = function(t) {
+            console.log('f');
             return "string" == typeof t ? t : _.toPairs(t).map(function(t) {
                 return t[0] + ": " + t[1]
             }).join("; ")
@@ -7588,7 +7590,7 @@
                     focus: f(_.get(h.cvvStyle, "focus", ""))
                 }
             })), v = h ? "iframe" : "jsonp", s(function() {
-                console.log('s function after iframe or whatever');
+                console.log('Panda Loaded all good');
                 var t, s, f, p, h;
                 if (n = n || "click", e = e || a, l.pk(d), s = c.querySelector("[data-panda=credit_card]"), f = c.querySelector("[data-panda=cvv]"), !s) throw 'PandaJS: no input with [data-panda="credit_card"] found';
                 if (!f) throw 'PandaJS: no input with [data-panda="cvv"] found';

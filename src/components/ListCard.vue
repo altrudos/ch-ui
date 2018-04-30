@@ -7,11 +7,11 @@
       </div>
       <div v-else>
         <div v-if="data.err">
-          <RespError v-bind:err="data.err" />
+          <ErrorsList v-bind:errors="data.err" />
         </div>
         <div v-else>
           <div v-if="data.result.rows.length">
-            <component :is="itemComponent" v-bind:item="item" v-for="(item, index) in data.result.rows" v-bind:text="item.id">
+            <component :is="itemComponent" v-bind:item="item" v-for="(item, index) in data.result.rows" :class="{'mb-2': index != data.result.rows.length - 1}" v-bind:key="index">
             </component>
           </div>
           <div v-else>
@@ -25,18 +25,20 @@
 
 
 <script>
-import RespError from './RespError'
+import ErrorsList from './ErrorsList'
 import DefaultItem from './DefaultItem'
 import DonationItem from './donations/DonationItem'
+import DonationDriveItem from './donations/DonationDriveItem'
 import DriveItem from './drives/DriveItem'
 
 export default {
   props: ['data', 'title', 'emptyMessage', 'itemComponent'],
   components: {
-    RespError,
+    ErrorsList,
     DefaultItem,
     DonationItem,
-    DriveItem
+    DriveItem,
+    DonationDriveItem
   }
 }
 </script>

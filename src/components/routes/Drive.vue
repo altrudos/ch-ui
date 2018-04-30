@@ -10,25 +10,34 @@
       <div v-else>
         <router-link :to="{name: 'home'}" class="small mb-2 d-block">←&nbsp;&nbsp;Back Home</router-link>
         <div class="jumbotron mb-4">
-          <h1 class="display-6">Donate to charity in honor <a :href="'https://www.reddit.com/user/' + drive.reddit_author">{{drive.reddit_author}}</a>'s reddit <a :href="'https://www.reddit.com' + drive.reddit_permalink">{{drive.reddit_type}}</a></h1>
+          <h1 class="display-6">Donate to charity to honor {{drive.reddit_author}}'s reddit <a target="_blank" :href="'https://www.reddit.com' + drive.reddit_permalink">{{drive.reddit_type}} <small class="text-muted fas fa-external-link-alt ml-1"></small></a></h1>
           <div class="lead">
-            <div v-if="charity">
-              <p class="lead">Money raised goes to the charity {{drive.reddit_author}} chose: <a :href="charity.url">{{charity.nlame}}</a></p>
+            <div v-if="drive.charity">
+              <p class="lead">
+                <span v-if="drive.total_amount > 0">
+                  <AmountRaised :drive="drive" /> has been raised and 
+                </span>
+                {{drive.reddit_author}} has chosen <st<a :href="drive.charity.url"><strong>{{drive.charity.name}}</strong></a> as the charity.</p>
             </div>
             <div v-else>
-              <p>Money raised goes to a charity of their choice.</p>
+              <div v-if="drive.num_donations > 0">
+                <p><AmountRaised :drive="drive" /> has been raised and will go to a charity of {{drive.reddit_author}}'s choice.</p>
+              </div>
+              <div v-else>
+                <p>Money raised goes to a charity of their choice.</p>
+              </div>
             </div>
           </div>
         </div>
+        <ErrorsList :errors="form.errors" /> 
         <div class="row">
-          <div class="col-md-5 order-md-2">
-          </div>
-          <div class="col-md-7 order-md-1">
+          <div class="col-md-7 has-spinner">
+            <FormSpinner :on="form.working" />
             <h4 class="mb-3">Make a Donation</h4>
             <b-form @submit="submitDonation($event)" :class="{'was-validated': form.wasValidated}" :disabled="form.working">
               <b-form-group class="mb-3">
-                <label class="form-label">Amount</label>
-                <div class="col-md-6 pl-0">
+                <label class="form-label">Amount (USD)</label>
+                <div class="col-md-4 pl-0">
                   <b-form-input
                     type="text"
                     v-model="form.amount">
@@ -37,15 +46,16 @@
                 </div>
               </b-form-group>
               <b-form-group class="mb-4">
-                <label class="form-label">Email</label>
+                <label class="form-label">Email <small class="text-muted">(your receipt will be sent here)</small></label>
                 <b-form-input
                   type="text"
                   v-model="form.email">
                 </b-form-input>
                 <b-form-invalid-feedback>Email is required</b-form-invalid-feedback>
               </b-form-group>
+              <button class="d-none"></button>
             </b-form>
-            <form :id="'panda_cc_form_' + pandanum" v-on:submit.prevent="preventSubmit($event)" novalidate="novalidate" :class="{'was-validated': form.wasValidated}" :disabled="form.working">
+            <form :id="'panda_cc_form'" v-on:submit.prevent="preventSubmit($event)" novalidate="novalidate" :class="{'was-validated': form.wasValidated}" :disabled="form.working">
               <h4 class="mb3">Payment Information</h4>
               <div class="row">
                 <div class="col-md-6 mb-3">
@@ -76,17 +86,20 @@
                   <div class="invalid-feedback"></div>
                 </div>
                 <div class="col-md-4 mb-3">
-                  <label for="cc-expiration">CVV*</label>
-                  <input id="cc-cvv" type="text" required="" data-panda="cvv" :value="form.cvv"  class="form-control"/>
+                  <label for="cc-expiration">CVV</label>
+                  <input id="cc-cvv" type="text" data-panda="cvv" :value="form.cvv"  class="form-control"/>
                   <div class="invalid-feedback"></div>
                 </div>
               </div>
               <div class="row">
                 <div class="col-md-12">
-                  <button class="btn btn-block btn-primary"><span v-if="form.working">Working...</span><span v-else>Submit</span></button>
+                  <button class="btn btn-lg btn-block btn-primary"><span v-if="form.working">Working...</span><span v-else>Donate</span></button>
                 </div>
               </div>
             </form>
+          </div>
+          <div class="col-md-5 order-md-1">
+            <ListCard v-bind:data="recentDonations" item-component="DonationItem" title="Recent Donations" empty-message="No donations"></ListCard>
           </div>
         </div>
       </div>
@@ -96,6 +109,11 @@
 
 <script>
 import api from '@/lib/api'
+import ErrorsList from '@/components/ErrorsList'
+import ListCard from '@/components/ListCard'
+import Amount from '@/components/Amount'
+import AmountRaised from '@/components/drives/AmountRaised'
+import FormSpinner from '@/components/FormSpinner'
 
 export default {
   name: 'Drive',
@@ -115,10 +133,16 @@ export default {
       drive: null,
       charity: null,
       pandanum: new Date().getTime(),
-      recentDonations: [],
+      recentDonations: {
+        loading: true,
+        result: {
+          rows: []
+        }
+      },
       form: Object.assign({
         wasValidated: false,
-        working: false
+        working: false,
+        errors: []
       }, prefill)
     }
   },
@@ -126,13 +150,20 @@ export default {
     // call again the method if the route changes
     '$route': 'fetchData'
   },
+  components: {
+    ErrorsList,
+    ListCard,
+    Amount,
+    AmountRaised,
+    FormSpinner
+  },
   methods: {
     submitDonation (e) {
       e.preventDefault()
-      console.log('submit it')
+      console.log('we need the payment information from PandaPay');
+      this.pandaForm.submit()
     },
     preventSubmit (e) {
-      console.log('e', e)
       e.preventDefault()
       this.form.wasValidated = true
       return true
@@ -146,65 +177,95 @@ export default {
           return
         }
         this.drive = result.drive
-        this.recentDonations = result.recentDonations
+        this.recentDonations.loading = false
+        this.recentDonations.result.rows = result.recentDonations
         this.loading = false
         document.title = 'Charity Drive for ' + this.drive.reddit_author + "'s " + this.drive.reddit_type
+        this.bindPanda()
       })
+    },
+    bindPanda () {
+      console.log('document.querySelectorAll("form").length',document.querySelectorAll("form").length);
+      this.updatedCount = this.updatedCount || 0
+      if (this.pandaLoaded) {
+        console.log('already pandaload');
+        return
+      }
+
+      if (this.loading) {
+        console.log('still loading drive')
+        return
+      }
+
+      this.pandaLoaded = true
+
+      setTimeout(() => {
+        const PDiddy = Object.assign({}, Panda)
+        PDiddy.init('pk_test_jDT1TStVcXG5lpFouAxBsg', this.pandaId);
+
+        PDiddy.on('success', (cardToken) => {
+          // You now have a token you can use to refer to that credit card later.
+          // This token is used in PandaPay API calls for creating donations and grants
+          // so that you don't have to worry about security concerns with dealing with
+          // credit card data.
+          document.querySelector('[data-panda="first_name"]').setCustomValidity('')
+
+          this.form.working = true
+          api.createDonation(this.drive.id, cardToken, this.form, (err, result) => {
+            this.form.working = false
+            if (err) {
+              this.form.errors = err
+              return
+            }
+
+            //Refetch the data to show their donation
+            this.fetchData()
+
+            alert('Thanks for your donation, buddy.')
+          })
+        });
+
+        PDiddy.on('error', (errors) => {
+          // errors is a human-readable list of things that went wrong
+          //  (invalid card number, missing last name, etc.)
+          console.log('oh no');
+          this.pandaForm.classList.add('was-validated');
+
+          const inputs = this.pandaForm.querySelectorAll('input')
+          inputs.forEach((input) => {
+            input.setCustomValidity('')
+          })
+
+          errors.forEach((err) => {
+            console.log('err',err);
+            if (err.attribute == 'month' || err.attribute == 'year') {
+              err.attribute = 'expiration'
+            }
+            else if (err.attribute  == 'number' || err.attribute == 'card_type') {
+              err.attribute = 'credit_card'
+            }
+            const field = document.querySelector('[data-panda="' + err.attribute + '"]')
+
+            if (field) {
+                console.log('field', field);
+              field.setCustomValidity(err.message)
+              const msg = field.parentNode.querySelector('.invalid-feedback')
+              msg.innerHTML = err.message
+            }
+            else {
+              console.log('no field found', err);
+            }
+          })
+        })
+      }, 500)
     }
   },
   created () {
     this.fetchData()
+    this.pandaId = 'panda_cc_form'
   },
   updated () {
-    this.updatedCount = this.updatedCount || 0
-    console.log('updated', ++this.updatedCount);
-    if (this.pandaLoaded || this.loading) {
-      return
-    }
-
-    this.pandaLoaded = true
-
-    setTimeout(() => {
-      Panda.init('pk_test_jDT1TStVcXG5lpFouAxBsg', 'panda_cc_form_' + this.pandanum);
-
-      console.log('Object.keys(Panda)',Object.keys(Panda));
-
-      Panda.on('success', function(cardToken) {
-        // You now have a token you can use to refer to that credit card later.
-        // This token is used in PandaPay API calls for creating donations and grants
-        // so that you don't have to worry about security concerns with dealing with
-        // credit card data.
-        console.log('cardToken', cardToken);
-        document.querySelector('[data-panda="firstName"]').setCustomValidity('')
-      });
-
-      Panda.on('error', function(errors) {
-        // errors is a human-readable list of things that went wrong
-        //  (invalid card number, missing last name, etc.)
-        console.log('oh no');
-        form.classList.add('was-validated');
-
-        const inputs = form.querySelectorAll('input')
-        inputs.forEach((input) => {
-          input.setCustomValidity('')
-        })
-
-        errors.forEach((err) => {
-          if (err.attribute == 'month' || err.attribute == 'year') {
-            err.attribute = 'expiration'
-          }
-          else if (err.attribute  == 'number' || err.attribute == 'card_type') {
-            err.attribute = 'credit_card'
-          }
-          const field = document.querySelector('[data-panda="' + err.attribute + '"]')
-          console.log('field', field);
-          console.log('err.attribute',err.attribute);
-          field.setCustomValidity(err.message)
-          const msg = field.parentNode.querySelector('.invalid-feedback')
-          msg.innerHTML = err.message
-        })
-      })
-    },1000)
+    this.bindPanda()
   }
 }
 </script>

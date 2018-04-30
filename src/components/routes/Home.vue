@@ -2,7 +2,7 @@
   <div class="mt-4">
     <div class="jumbotron mb-4">
       <h1 class="display-6">Charity Honor {{msg}}</h1>
-      <p class="lead">Donate to charity honor of reddit comments and posts.</p>
+      <p class="lead">Donate to charity to honor reddit comments and posts.</p>
     </div>
 
     <div class="card mb-4">
@@ -10,10 +10,9 @@
         Start a Drive
       </div>
       <div class="card-body">
-        <div class="alert alert-danger" :class="{'d-none': errors.length == 0}">
-          <div v-for="(err, index) in errors" v-bind:key="index">{{err}}</div>
-        </div>
-        <b-form @submit="submit($event)">
+        <ErrorsList :errors="errors" />
+        <b-form @submit="submit($event)" class="has-spinner">
+          <FormSpinner :on="submitting" />
           <fieldset :disabled="submitting">
             <b-form-group>
               <label class="form-label">Reddit Post or Comment</label>
@@ -36,10 +35,10 @@
 
     <div class="row">
       <div class="col-md-6">
-        <ListCard v-bind:data="recentDonations" item-component="DonationItem" title="Recent Donations" empty-message="No donations"></ListCard>
+        <ListCard v-bind:data="recentDonations" item-component="DonationDriveItem" title="Recent Donations" empty-message="No donations"></ListCard>
       </div>
       <div class="col-md-6">
-        <ListCard v-bind:data="recentDrives" item-component="DriveItem" title="Recent Drives" empty-message="No drives"></ListCard>
+        <ListCard v-bind:data="topDrives" item-component="DriveItem" title="Top Drives" empty-message="No drives"></ListCard>
       </div>
     </div>
   </div>
@@ -51,6 +50,8 @@ import { required, url } from 'vuelidate/lib/validators'
 import api from '@/lib/api'
 import router from '@/router'
 import ListCard from '@/components/ListCard'
+import ErrorsList from '@/components/ErrorsList'
+import FormSpinner from '@/components/FormSpinner'
 
 export default {
   name: 'Index',
@@ -69,7 +70,7 @@ export default {
         result: [],
         err: false
       },
-      recentDrives: {
+      topDrives: {
         loading: true,
         result: [],
         err: false
@@ -88,7 +89,9 @@ export default {
     }
   },
   components: {
-    ListCard
+    ListCard,
+    ErrorsList,
+    FormSpinner
   },
   methods: {
     fetchData () {
@@ -98,22 +101,23 @@ export default {
         this.recentDonations.err = err
         this.recentDonations.result = result
       })
-      api.fetchLatestDrives((err, result) => {
-        this.recentDrives.loading = false
-        this.recentDrives.err = err
-        this.recentDrives.result = result
+      api.fetchTopDrives((err, result) => {
+        this.topDrives.loading = false
+        this.topDrives.err = err
+        this.topDrives.result = result
       })
     },
     submit: function (e) {
       e.preventDefault()
       if (!this.form.redditPostUrl) {
+        this.errors = ['Post URL is required']
         return
       }
       this.submitting = true
       api.createDrive(this.form, (err, result) => {
         this.submitting = false
         if (err) {
-          this.errors = [err.toString()]
+          this.errors = err
           return
         }
 
@@ -129,6 +133,7 @@ export default {
     }
   },
   created () {
+    document.title = 'Charity Honor'
     this.fetchData()
   }
 }

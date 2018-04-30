@@ -6,11 +6,13 @@
 export default {
   props: ['amount'],
   data () {
-    currency: 'USD'
+    return {
+      currency: 'USD'
+    }
   },
-  computed () {
-    dollars: {
-      return Mathr.round(this.amount / 100).toFixed(2)
+  computed: {
+    dollars () {
+      return Math.round(this.amount / 100).toFixed(2)
     }
   }
 }

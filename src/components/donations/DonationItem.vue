@@ -1,16 +1,21 @@
 <template>
   <div>
-    <em>Anonymous</em> donated <Amount :amount="item.amount" />
+    Someone donated <strong><Amount :amount="item.charge_amount" /></strong> <small>{{date}}</small>
   </div>
 </template>
 
 <script>
 import Amount from '../Amount'
 
-export default {
+export default{
   props: ['item'],
   components: {
     Amount
+  },
+  computed: {
+    date () {
+      return new Date(this.item.createdAt).toDateString()
+    }
   }
 }
 </script>
