@@ -5,31 +5,48 @@
       <p class="lead">Donate to charity to honor reddit comments and posts.</p>
     </div>
 
-    <div class="card mb-4">
-      <div class="card-header">
-        Start a Drive
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            Start a Drive
+          </div>
+          <div class="card-body">
+            <ErrorsList :errors="errors" />
+            <b-form @submit="submit($event)" class="has-spinner">
+              <FormSpinner :on="submitting" />
+              <fieldset :disabled="submitting">
+                <b-form-group>
+                  <label class="form-label">Reddit Post or Comment</label>
+                  <b-form-input
+                    type="text"
+                    v-model="form.redditPostUrl"
+                    @input="$v.form.redditPostUrl.$touch()"
+                    :state="$v.form.redditPostUrl.$dirty ? !$v.form.redditPostUrl.$invalid : null"
+                    placeholder="https://">
+                  </b-form-input>
+                  <b-form-invalid-feedback>URL is required</b-form-invalid-feedback>
+                </b-form-group>
+                <b-form-group>
+                  <b-button variant="primary" type="submit"><span v-if="submitting">Working...</span><span v-else>Submit</span></b-button>
+                </b-form-group>
+              </fieldset>
+            </b-form>
+          </div>
+        </div>
       </div>
-      <div class="card-body">
-        <ErrorsList :errors="errors" />
-        <b-form @submit="submit($event)" class="has-spinner">
-          <FormSpinner :on="submitting" />
-          <fieldset :disabled="submitting">
-            <b-form-group>
-              <label class="form-label">Reddit Post or Comment</label>
-              <b-form-input
-                type="text"
-                v-model="form.redditPostUrl"
-                @input="$v.form.redditPostUrl.$touch()"
-                :state="$v.form.redditPostUrl.$dirty ? !$v.form.redditPostUrl.$invalid : null"
-                placeholder="https://">
-              </b-form-input>
-              <b-form-invalid-feedback>URL is required</b-form-invalid-feedback>
-            </b-form-group>
-            <b-form-group>
-              <b-button variant="primary" type="submit"><span v-if="submitting">Working...</span><span v-else>Submit</span></b-button>
-            </b-form-group>
-          </fieldset>
-        </b-form>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">How It Works</div>
+          <div class="card-body">
+            <ul class="ml-0 pl-3 mb-0">
+              <li>Someone makes a great post</li>
+              <li>Someone else starts a charity drive</li>
+              <li>Other people donate to charity in honor of the post</li>
+              <li>The post author decides which charity gets the money</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
 
