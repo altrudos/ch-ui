@@ -1,93 +1,117 @@
-import superagent from 'superagent'
+import axios from 'axios'
 const apiUrl = 'http://localhost:3000/'
 
-function request (method, url) {
-  return superagent[method](apiUrl + url)
-    .set('Accept', 'application/json')
-}
+const api = axios.create({
+	baseUrl: apiUrl
+})
 
-function handler (done) {
-  return (err, result) => {
-    let json
-
-    if (err) {
-      try {
-        json = JSON.parse(result.text)
-      } catch (ex) {
-        done(new Error('Error from server. Could not parse error JSON'))
-        return
-      }
-
-      done(json)
-      return
-    }
-    try {
-      json = JSON.parse(result.text)
-    } catch (ex) {
-      done(new Error('Error parsing JSON'))
-      return
-    }
-    done(null, json)
-  }
+async function handler (promise) {
+	return promise.catch((err) => {
+		throw new Error('I found some kind of error')
+	})
 }
 
 function createDrive (vueObj, done) {
-  const data = { ...vueObj }
-  request('post', 'drives')
-    .send(data)
-    .end(handler(done))
+	const data = { ...vueObj }
+	request('post', 'drives')
+		.send(data)
+		.end(handler(done))
 }
 
 function createDonation (driveId, cardToken, vueObj, done) {
-  const data = { ...vueObj }
-  data.drive_id = driveId
-  data.pandapay_token = cardToken
+	const data = { ...vueObj }
+	data.drive_id = driveId
+	data.pandapay_token = cardToken
 
-  request('post', 'donations')
-    .send(data)
-    .end(handler(done))
+	request('post', 'donations')
+		.send(data)
+		.end(handler(done))
 }
 
 function chooseCharity (token, charityId, done) {
-  request('patch', 'drives/token/' + token)
-    .send({
-      charityId: charityId
-    })
-    .end(handler(done))
+	request('patch', 'drives/token/' + token)
+		.send({
+			charityId: charityId
+		})
+		.end(handler(done))
+}
+
+async function fetchDrive (slug) {
+	return await handler(new Promise((resolve, reject) => {
+		return resolve({
+			drive: {
+				name: 'Some Drive',
+				slug: slug,
+				content_type: 'reddit_comment',
+				content_meta: {
+					author: 'Dage',
+					subreddit: 'funny'
+				}
+			},
+			recentDonations: {
+				rows: []
+			}
+		})
+	}))
 }
 
 function fetchDrive (id, done) {
-  request('get', 'drives/' + id).end(handler(done))
-}
-
-function fetchDrive (id, done) {
-  request('get', 'drives/' + id).end(handler(done))
+	request('get', 'drives/' + id).end(handler(done))
 }
 
 function fetchDriveByToken (token, done) {
-  request('get', 'drives/token/' + token).end(handler(done))
+	request('get', 'drives/token/' + token).end(handler(done))
 }
 
-function fetchLatestDonations (done) {
-  request('get', 'donations/latest').end(handler(done))
+async function fetchLatestDonations () {
+	return {
+		rows: [{
+			amount: 123,
+			name: 'Colin',
+			createdAt: new Date()
+		}],
+		loading: false,
+		error: true
+	}
 }
 
-function fetchLatestDrives (done) {
-  request('get', 'drives/latest').end(handler(done))
+async function fetchLatestDrives (done) {
+	return {
+		rows: [{
+			amount: 123,
+			name: 'Colin'
+		}],
+		loading: false,
+		error: true
+	}
 }
 
-function fetchTopDrives (done) {
-  request('get', 'drives/top').end(handler(done))
+async function fetchTopDrives (done) {
+	return {
+		rows: [{
+			id: 123,
+			content_type: 'reddit_comment',
+			content_meta: {
+				author: 'Vindexus',
+				subreddit: 'wtf'
+			},
+			slug: 'HappyHonorableKnight',
+			total_amount: 3234,
+			createdAt: new Date("2019-02-02")
+		}],
+		loading: false,
+		error: true
+	}
 }
 
 
 export default {
-  createDrive,
-  createDonation,
-  fetchDrive,
-  fetchLatestDonations,
-  fetchLatestDrives,
-  fetchTopDrives,
-  fetchDriveByToken,
-  chooseCharity
+	createDrive,
+	createDonation,
+	fetchDrive,
+	fetchLatestDonations,
+	fetchLatestDrives,
+	fetchTopDrives,
+	fetchDriveByToken,
+	chooseCharity
 }

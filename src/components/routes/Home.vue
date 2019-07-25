@@ -112,17 +112,35 @@ export default {
   },
   methods: {
     fetchData () {
+      this.fetchTop()
+      this.fetchLatest()
+    },
+    async fetchLatest () {
       this.recentDonations.loading = true
-      api.fetchLatestDonations((err, result) => {
+      let result
+      try {
+        result = await api.fetchLatestDonations()
+      } catch (ex) {
         this.recentDonations.loading = false
-        this.recentDonations.err = err
-        this.recentDonations.result = result
-      })
-      api.fetchTopDrives((err, result) => {
+        this.recentDonations.error = ex
+        return
+      }
+      this.recentDonations.loading = false
+      this.recentDonations.result = result
+    },
+    async fetchTop () {
+      this.topDrives.loading = true
+      let result
+      try {
+        result = await api.fetchTopDrives()
+      } catch (ex) {
+        this.topDrives.error = ex
         this.topDrives.loading = false
-        this.topDrives.err = err
-        this.topDrives.result = result
-      })
+        return
+      }
+      console.log('result', result);
+      this.topDrives.loading = false
+      this.topDrives.result = result
     },
     submit: function (e) {
       e.preventDefault()

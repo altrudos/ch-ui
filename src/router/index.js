@@ -14,7 +14,7 @@ export default new Router({
       component: Home
     },
     {
-      path: '/drive/:author/:id',
+      path: '/:slug',
       name: 'drive',
       component: Drive
     },

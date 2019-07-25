@@ -1,6 +1,6 @@
 <template>
   <div>
-    Someone donated <strong><Amount :amount="item.charge_amount" /></strong> <small>{{date}}</small>
+    Someone donated <strong><Amount :amount="item.amount" /></strong> <small>{{date}}</small>
   </div>
 </template>
 
